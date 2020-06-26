@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<form>
+  <field formid="testDataPost" label="Data to post" type="string" mandatory="true" binding="custom.testData" max-length="4000"/>
+  <field formid="numberCalls" label="Number of calls" type="string" mandatory="true" binding="custom.numberCalls" max-length="4000"/>
+  
+  <action formid="submit" valid-form="false"/>
+</form>

@@ -1,0 +1,74 @@
+/**
+*  testHTTPFormClient.ds
+*
+*   @input formData : String
+*	@input numCalls : String
+*   @output httpResult : dw.svc.Result
+*	@output svcConfig : dw.svc.Service
+*
+*/
+importPackage( dw.svc );
+
+function execute( args : PipelineDictionary ) : Number
+{	
+   var service:Service;
+   var result:Result;
+   var counter = args.numCalls;
+   var mockCall = false;
+   var pipelineError = false;
+   var requestData = args.formData;
+   
+   var callTestHTTPForm = LocalServiceRegistry.createService("test.httpform.post", {
+		createRequest: function(svc:HTTPFormService, args){
+			if(args) {
+				return JSON.stringify(args);
+			} else {
+				return null;
+			}
+		},
+		parseResponse: function(svc:HTTPFormService, client:HTTPClient) {
+			return client.text;
+		},
+		mockCall: function(svc:HTTPFormService, client:HTTPClient) {
+			return {
+				statusCode: 200,
+				statusMessage: "Form post successful",
+				text: "MOCK RESPONSE (" + svc.URL + ")"
+			};
+		}
+	});
+	
+    // Execute the request on the service configuration
+   function makeCall(svcConfig:Service, params:Object) {
+ 
+      if ( counter == null ){
+     	counter = 1;
+      }
+   
+      while ( counter != 0 ){
+      	if ( mockCall ) {
+     	  result = service.setMock().call(params);
+      	} else if ( pipelineError ) {
+      	  result = service.setThrowOnError().call(params);	
+      	} else {
+      	  result = service.call(params);
+      	}
+     	counter--;
+      }
+      
+      // Set pdict out values
+      args.svcConfig = svcConfig;
+      args.httpResult = result;
+   }
+   
+   service = callTestHTTPForm;
+   service.URL += "/post";
+   
+   makeCall(service, requestData);  
+    
+   if ( result == null || service == null ){
+   	 return PIPELET_ERROR;
+   }
+   
+   return PIPELET_NEXT;
+}

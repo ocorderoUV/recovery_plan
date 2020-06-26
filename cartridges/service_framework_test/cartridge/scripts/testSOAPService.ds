@@ -1,0 +1,117 @@
+/**
+*  testSOAPClient.ds
+*
+*   @input testType : String
+*   @input zip : String
+*   @input numCalls : String
+*   @output soapResult : dw.svc.Result
+*	@output svcConfig : dw.svc.Service
+*
+*/
+importPackage( dw.svc );
+importPackage( dw.util );
+importPackage( dw.ws );
+
+function execute( args : PipelineDictionary ) : Number
+{
+   var service:Service;
+   var result:Result;
+   var mockCall = false;
+   var pipelineError = false;
+   
+   var counter = args.numCalls;
+   var zip = args.zip;
+   var endpointParam;
+   
+   var callTestSOAP11 = LocalServiceRegistry.createService("test.soap11", {     
+      initServiceClient: function() {
+		// authentication is provided by 'key' param and stored in credential object
+		// load the WebReference
+	    this.census = webreferences.census;
+	    // Get the default service.
+	    return this.census.getDefaultService();
+	  },  
+	  createRequest : function(svc: SOAPService, params : Object) : Object {	
+		// Create parameter
+		var parameter = new this.census.DeFactoSF1Part1ByZip(params.zip, params.key);
+		return parameter;
+      },   
+	  execute: function(svc:SOAPService, parameter:Object) {
+		return svc.serviceClient.deFactoSF1Part1ByZip(parameter);
+	  },
+      parseResponse : function(service: SOAPService, response : Object) : Object {
+		 return response.deFactoSF1Part1ByZipResult;
+      },
+      mockCall : function(service : SOAPService, request : Object) : Object {
+		return { status: "MOCKED" };
+      }
+    });
+	 
+   var callTestSOAP12 = LocalServiceRegistry.createService("test.soap12", {     
+      createRequest : function(svc: SOAPService, params : Object) : Object {
+		// Use the URL in the WSDL, don't authenticate...
+		// svc.URL = "NONE";
+		svc.authentication = "NONE";
+	
+		// load the WebReference
+	    var weatherService = webreferences2.weather;
+	    
+		var weatherServiceSVC = weatherService.getDefaultService();		
+		svc.serviceClient = weatherServiceSVC;
+		
+		var parameter = params.GetCityForecastByZIPSoapIn;
+		return parameter;
+      },   
+	  execute: function(svc:SOAPService, parameter:Object) {
+		return svc.serviceClient.getCityForecastByZIP(parameter);
+	  },
+      parseResponse : function(service: SOAPService, response : XML) : Object {
+		 return response;
+      },
+      mockCall : function(service : SOAPService, request : Object) : Object {
+		return { status: "MOCKED" };
+      }
+    });
+   
+   // Execute the request on the service configuration
+   function makeCall(svcConfig:Service, params:Object) {
+ 
+      if ( counter == null ){
+     	counter = 1;
+      }
+   
+      while ( counter != 0 ){
+      	if ( mockCall ) {
+     	  result = service.setMock().call(params);
+      	} else if ( pipelineError ) {
+      	  result = service.setThrowOnError().call(params);	
+      	} else {
+      	  result = service.call(params);
+      	}
+     	counter--;
+      }
+      
+      // Set pdict out values
+      args.svcConfig = svcConfig;
+      args.soapResult = result;
+   }
+   
+  switch ( args.testType ) {
+    case "WEATHER":
+      service = callTestSOAP12;
+      endpointParam = {"GetCityForecastByZIPSoapIn": zip};   
+      break;
+    case "CENSUS":
+      service =  callTestSOAP11;
+      endpointParam = {"zip": zip, "key": service.configuration.credential.password};
+      break;
+  }
+  
+  makeCall(service, endpointParam);
+  
+  if ( result == null || service == null ){
+    return PIPELET_ERROR;
+  }
+   
+  return PIPELET_NEXT;
+}

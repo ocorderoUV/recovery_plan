@@ -1,0 +1,255 @@
+/**
+ * testHTTPClient.ds
+ *
+ *   @input testType : String the type of test to run.
+ *	 @input numCalls : String the number of calls to make.
+ *   @input returnCode : String the simulated http return code.
+ *	 @output svcConfig : dw.svc.Service the service configuration object.
+ *   @output httpResult : dw.svc.Result the http result object.
+ *
+ */
+importPackage( dw.system );
+importPackage( dw.svc );
+importPackage( dw.net );
+importPackage( dw.io );
+
+function execute( args : PipelineDictionary ) : Number
+{
+   var service:Service;
+   var result:Result;
+   var counter = args.numCalls;
+   var mockCall = false;
+   var pipelineError = false;
+   var returnCode = args.returnCode;   
+   var requestBody = {'testString':'foo', 'testNum': 5, 'testBool': true}; 
+   
+   var callTestGet = LocalServiceRegistry.createService("test.Oscar", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("GET");
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		},
+		mockCall: function(svc:HTTPService, client:HTTPClient){
+		    return {
+				statusCode: 200,
+				statusMessage: "Success",
+				text: "MOCK RESPONSE (" + svc.URL + ")"
+			};
+		},
+		filterLogMessage: function(msg:String) {
+			return msg.replace("headers", "OFFWITHTHEHEADERS");
+		}
+	});
+
+   /*
+   var callTestGet = LocalServiceRegistry.createService("test.http.get", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("GET");
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		},
+		mockCall: function(svc:HTTPService, client:HTTPClient){
+		    return {
+				statusCode: 200,
+				statusMessage: "Success",
+				text: "MOCK RESPONSE (" + svc.URL + ")"
+			};
+		},
+		filterLogMessage: function(msg:String) {
+			return msg.replace("headers", "OFFWITHTHEHEADERS");
+		}
+	});
+	*/
+
+	var callTestPost = LocalServiceRegistry.createService("test.http.post", {
+		createRequest: function(svc:HTTPService, args){
+			// Default request method is post
+			// No need to setRequestMethod
+			if(args) {
+				svc.addHeader("Content-Type", "text/json");
+				return JSON.stringify(args);
+			} else {
+				return null;
+			}
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		}
+	});
+	
+	var callTestPut = LocalServiceRegistry.createService("test.http.put", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("PUT");
+			if(args) {
+				svc.addHeader("Content-Type", "text/json");
+				return JSON.stringify(args);
+			} else {
+				return null;
+			}
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		}
+	});
+	
+	var callTestDelete = LocalServiceRegistry.createService("test.http.delete", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("DELETE");
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		}
+	});
+	
+	var callTestBasicAuth = LocalServiceRegistry.createService("test.http.basicauth", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("GET");
+			svc.setAuthentication("BASIC");
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		}
+	});
+	
+	var callTestTimeout = LocalServiceRegistry.createService("test.http.timeout", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("GET");
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		}
+	});
+	
+	
+	var callTestStatus = LocalServiceRegistry.createService("test.http.status", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("GET");
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		}
+	});
+   
+
+   // Execute the request on the service configuration
+   function makeCall(svcConfig:Service, params:Object) {
+ 
+      if ( counter == null ){
+     	counter = 1;
+      }
+   
+      while ( counter != 0 ){
+      	if ( mockCall ) {
+     	  result = service.setMock().call(params);
+      	} else if ( pipelineError ) {
+      	  result = service.setThrowOnError().call(params);	
+      	} else {
+      	  result = service.call(params);
+      	}
+     	counter--;
+      }
+      
+      // Set pdict out values
+      args.svcConfig = svcConfig;
+      args.httpResult = result;
+   }
+	
+   switch ( args.testType ) {
+   	
+   	// make a GET request with additional headers, query param, json payload
+   	case "GET":
+   	  service = callTestGet;
+	  service.URL += "/get";
+      service.addHeader('testHeader', 'testHeaderValue')
+      		 .addParam('filter', true);
+      break;
+   	
+    // make a POST request with additional headers, query param, json payload
+   	case "POST":
+   	  service = callTestPost;
+	  service.URL += "/post";
+      service.addHeader('testHeader', 'testHeaderValue')  
+      break;
+   	
+   	// make a POST request with additional headers, query param, json payload, using UTF-16 encoding
+   	case "ENCODING":
+   	  service = callTestPost;
+      service.setEncoding('UTF-16');
+      break;
+   	
+   	// make a PUT request with additional headers, query param concatenation, json payload
+   	case "PUT":
+   	  service = callTestPut;
+   	  service.URL += "/put";
+      service.addParam('filter', true)
+      		 .addParam('secondParamAmpersand', 1);
+      break;
+    
+    // make a DELETE request with additional headers, query param, json payload
+    case "DELETE":
+   	  service = callTestDelete;
+   	  service.URL += "/delete";
+      service.addHeader('testHeader', 'testHeaderValue')
+      		 .addParam('filter', true);
+      break;
+    
+    // make an HTTP post with BASIC auth.
+    case "BASICAUTH":
+      service = callTestBasicAuth;
+      service.URL += "/basic-auth/user/passwd";
+      break;
+   
+    // make a GET request with timeout
+    case "TIMEOUT":
+      service = callTestTimeout;   
+      service.URL += "/delay/6";								   
+      break;
+    
+    // make a GET request and write result object to file
+    case "OUTFILE":
+      service = callTestGet;
+      service.setOutFile(File("TEMP/"+ Math.random()));    								    
+      break;
+    
+    // make a GET request in explicit mock mode
+    case "MOCKED":
+      service = ServiceRegistry.get("test.http.get");
+	  mockCall = true;
+      break;
+   
+    // make a GET request and test ratelimit
+    case "RATELIMIT":
+      service = callTestGet;
+      service.URL += "/get";
+      break;
+   
+    // make a GET request with status code return as specified by returnCode pipeline query param
+    case "STATUS":
+      service = callTestStatus;
+      if ( returnCode == null ) {
+      	trace("No return code provided");
+      }
+      service.URL += "/status/" + returnCode;	   
+      break;
+    
+    // make a GET request and throwOnError() to have PIPELINE handle response error.  
+    case "THROWONERROR":
+      service = callTestStatus;      
+      service.URL += "/status/" + 500;
+      counter = 20;
+      pipelineError = true;
+      break;
+   }
+   
+   // Make the service call here
+   makeCall(service, requestBody);
+   
+   if ( result == null || service == null ){
+   	  return PIPELET_ERROR;
+   }
+
+   return PIPELET_NEXT;
+}
+

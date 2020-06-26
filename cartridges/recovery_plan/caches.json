@@ -1,0 +1,10 @@
+{
+    "caches": [{
+            "id": "UnlimitedTestCache"
+        },
+        {
+            "id": "TestCacheWithExpiration",
+            "expireAfterSeconds": 10
+        }
+    ]
+}
