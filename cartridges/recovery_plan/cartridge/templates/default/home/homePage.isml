@@ -4,11 +4,15 @@
         assets.addJs('/js/productTile.js');
         assets.addCss('/css/homePage.css');
     </isscript>
+
+    <iscontent type="text/html" charset="UTF-8" compact="false"/>
+
+    <iscache type = "relative" hour = "1" minute = "30">
+
     <iscomment> +1.888.555.0199 This phone is a requirement to support existing Gomez monitor of SiteGenesis. Demadware customers can remove this.</iscomment>
     <div class="home-main homepage">
         <isslot id="home-main-m" description="Main home page slot." context="global" />
     </div>
-    
     <p>${pdict.param1.test}</p>
     <p>${pdict.param2.test}</p>
     <iscomment>
@@ -53,5 +57,7 @@
             </form>
         </div>
     </div>
+    
+    <isslot id="content-test" description="Here is the banner" context="global" />
 
 </isdecorate>
