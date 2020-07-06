@@ -19,17 +19,17 @@ function createErrorNotification(message) {
     $('.error-messaging').append(errorHtml);
 }
 
-module.exports = {
-    removeAddress: function () {
-        $('.remove-address').on('click', function (e) {
+= {
+    removeAddress: function() {
+        $('.remove-address').on('click', function(e) {
             e.preventDefault();
             isDefault = $(this).data('default');
             if (isDefault) {
-                url = $(this).data('url')
-                    + '?addressId='
-                    + $(this).data('id')
-                    + '&isDefault='
-                    + isDefault;
+                url = $(this).data('url') +
+                    '?addressId=' +
+                    $(this).data('id') +
+                    '&isDefault=' +
+                    isDefault;
             } else {
                 url = $(this).data('url') + '?addressId=' + $(this).data('id');
             }
@@ -37,14 +37,14 @@ module.exports = {
         });
     },
 
-    removeAddressConfirmation: function () {
-        $('.delete-confirmation-btn').click(function (e) {
+    removeAddressConfirmation: function() {
+        $('.delete-confirmation-btn').click(function(e) {
             e.preventDefault();
             $.ajax({
                 url: url,
                 type: 'get',
                 dataType: 'json',
-                success: function (data) {
+                success: function(data) {
                     $('#uuid-' + data.UUID).remove();
                     if (isDefault) {
                         var addressId = $('.card .address-heading').first().text();
@@ -60,7 +60,7 @@ module.exports = {
                         }
                     }
                 },
-                error: function (err) {
+                error: function(err) {
                     if (err.responseJSON.redirectUrl) {
                         window.location.href = err.responseJSON.redirectUrl;
                     } else {
@@ -72,8 +72,8 @@ module.exports = {
         });
     },
 
-    submitAddress: function () {
-        $('form.address-form').submit(function (e) {
+    submitAddress: function() {
+        $('form.address-form').submit(function(e) {
             var $form = $(this);
             e.preventDefault();
             url = $form.attr('action');
@@ -84,7 +84,7 @@ module.exports = {
                 type: 'post',
                 dataType: 'json',
                 data: $form.serialize(),
-                success: function (data) {
+                success: function(data) {
                     $form.spinner().stop();
                     if (!data.success) {
                         formValidation($form, data);
@@ -92,7 +92,7 @@ module.exports = {
                         location.href = data.redirectUrl;
                     }
                 },
-                error: function (err) {
+                error: function(err) {
                     if (err.responseJSON.redirectUrl) {
                         window.location.href = err.responseJSON.redirectUrl;
                     }

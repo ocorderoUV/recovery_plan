@@ -1,0 +1,6 @@
+{
+    "hooks": [{
+        "name": "dw.ocapi.shop.category.beforeGET",
+        "script": "./hooks/default.js"
+    }]
+}
