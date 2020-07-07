@@ -1,0 +1,88 @@
+/**
+ * testHTTPClient.ds
+ *
+ *   @input testType : String the type of test to run.
+ *	 @input numCalls : String the number of calls to make.
+ *   @input returnCode : String the simulated http return code.
+ *	 @output svcConfig : dw.svc.Service the service configuration object.
+ *   @output httpResult : dw.svc.Result the http result object.
+ *
+ */
+importPackage( dw.system );
+importPackage( dw.svc );
+importPackage( dw.net );
+importPackage( dw.io );
+
+function execute( args : PipelineDictionary ) : Number
+{
+   var service:Service;
+   var result:Result;
+   var counter = args.numCalls;
+   var mockCall = false;
+   var pipelineError = false;
+   var returnCode = args.returnCode;
+   var requestBody = {'testString':'foo', 'testNum': 5, 'testBool': true};
+
+   var callTestGet = LocalServiceRegistry.createService("test.Oscar", {
+		createRequest: function(svc:HTTPService, args){
+			svc.setRequestMethod("GET");
+		},
+		parseResponse: function(svc:HTTPService, client:HTTPClient) {
+			return client.text;
+		},
+		mockCall: function(svc:HTTPService, client:HTTPClient){
+		    return {
+				statusCode: 200,
+				statusMessage: "Success",
+				text: "MOCK RESPONSE (" + svc.URL + ")"
+			};
+		},
+		filterLogMessage: function(msg:String) {
+			return msg.replace("headers", "OFFWITHTHEHEADERS");
+		}
+	});
+
+   // Execute the request on the service configuration
+   function makeCall(svcConfig:Service, params:Object) {
+
+      if ( counter == null ){
+     	counter = 1;
+      }
+
+      while ( counter != 0 ){
+      	if ( mockCall ) {
+     	  result = service.setMock().call(params);
+      	} else if ( pipelineError ) {
+      	  result = service.setThrowOnError().call(params);	
+      	} else {
+      	  result = service.call(params);
+      	}
+     	counter--;
+      }
+
+      // Set pdict out values
+      args.svcConfig = svcConfig;
+      args.httpResult = result;
+   }
+
+   switch ( args.testType ) {
+
+   	// make a GET request with additional headers, query param, json payload
+   	case "GET":
+   	  service = callTestGet;
+	  service.URL += "/get";
+      service.addHeader('testHeader', 'testHeaderValue')
+      		 .addParam('filter', true);
+      break;
+   }
+
+   // Make the service call here
+   makeCall(service, requestBody);
+
+   if ( result == null || service == null ){
+   	  return PIPELET_ERROR;
+   }
+
+   return PIPELET_NEXT;
+}
+
