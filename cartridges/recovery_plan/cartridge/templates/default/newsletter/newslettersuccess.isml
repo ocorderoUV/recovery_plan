@@ -1,0 +1,7 @@
+<isdecorate template="common/layout/page">
+	<h3>
+		${pdict.newsletterForm.fname.value} ${pdict.newsletterForm.lname.value}, thank you for registering! 
+		${pdict.newsletterForm.email.value}
+	</h3>
+	Back to <a href="${pdict.continueUrl}">Newsletter Subscription</a>.
+</isdecorate>
