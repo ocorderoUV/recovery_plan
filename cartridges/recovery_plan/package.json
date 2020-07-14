@@ -1,3 +1,4 @@
 {
-    "caches": "./caches.json"
+    "caches": "./caches.json",
+    "hooks": "./cartridge/scripts/hooks.json"
 }

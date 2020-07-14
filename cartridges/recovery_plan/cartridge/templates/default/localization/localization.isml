@@ -1,0 +1,16 @@
+<isdecorate template="common/layout/page">
+    <isscript>
+        var assets = require('*/cartridge/scripts/assets.js');
+        assets.addJs('/js/productTile.js');
+        assets.addCss('/css/homePage.css');
+    </isscript>
+
+    <div class="container">
+        <h1>${Resource.msg('title','localization',null)}</h1>
+
+        <img class="img-fluid"  src="${URLUtils.staticURL('/images/comida.jpg')}" alt="Responsive image"/>
+
+        <isslot id="content-test" description="Here is the banner" context="global" />
+    </div>
+
+</isdecorate>
